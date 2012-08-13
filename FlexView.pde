@@ -20,6 +20,14 @@
 import processing.opengl.*;
 import processing.serial.*;
 
+//OpenGL import
+import processing.opengl.*;
+import javax.media.opengl.*;
+import javax.media.opengl.glu.*;
+import com.sun.opengl.util.*; 
+
+//OpenGL object
+GL gl;
 // IF THE SKETCH CRASHES OR HANGS ON STARTUP, MAKE SURE YOU ARE USING THE RIGHT SERIAL PORT:
 // 1. Have a look at the Processing console output of this sketch.
 // 2. Look for the serial port list and find the port you need (it's the same as in Arduino).
@@ -47,6 +55,7 @@ int rotateVal = 0;
 vec3 camPos;
 vec3 camTarget;
 float camFov;
+float camNearCutPlane;
 
 //For the textured sphere
 PImage bg;
@@ -161,10 +170,11 @@ void initScene()
   camPos = new vec3(0, 0, 900);
   camTarget = new vec3(0, 0, 0);
   camFov = PI/3.0;
+  camNearCutPlane = 1;
   
   //ortho(-width/2, width/2, -height/2, height/2, -10000, 10000);
   perspective(camFov, float(width)/float(height), 
-            1, 10000);
+            camNearCutPlane, 10000);
   //camPos = new vec3(0, 0, 30);
   //camTarget = new vec3(0, 0, 0);
 }
@@ -174,6 +184,8 @@ void setup() {
   // Setup graphics
   size(1024, 768, OPENGL);  
   
+//  gl = ((PGraphicsOpenGL)g).gl;
+//  gl.glEnable(GL.GL_CULL_FACE);
   //Load texture
   texmap = loadImage("world32k.jpg");   
   texMoon = loadImage("moon.jpg");
@@ -191,19 +203,19 @@ void setup() {
   font = loadFont("Univers-66.vlw");
   textFont(font);
   
-  // Setup serial port I/O
-  println("AVAILABLE SERIAL PORTS:");
-  println(Serial.list());
-  String portName = Serial.list()[SERIAL_PORT_NUM];
-  println();
-  println("HAVE A LOOK AT THE LIST ABOVE AND SET THE RIGHT SERIAL PORT NUMBER IN THE CODE!");
-  println("  -> Using port " + SERIAL_PORT_NUM + ": " + portName);
-  serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
-  
-  
-  //Setup serial comm for bend sensor
-  serialBend = new Serial(this, Serial.list()[6], 9600);
-  serialBend.bufferUntil(LINE_FEED);
+//  // Setup serial port I/O
+//  println("AVAILABLE SERIAL PORTS:");
+//  println(Serial.list());
+//  String portName = Serial.list()[SERIAL_PORT_NUM];
+//  println();
+//  println("HAVE A LOOK AT THE LIST ABOVE AND SET THE RIGHT SERIAL PORT NUMBER IN THE CODE!");
+//  println("  -> Using port " + SERIAL_PORT_NUM + ": " + portName);
+//  serial = new Serial(this, portName, SERIAL_PORT_BAUD_RATE);
+//  
+//  
+//  //Setup serial comm for bend sensor
+//  serialBend = new Serial(this, Serial.list()[6], 9600);
+//  serialBend.bufferUntil(LINE_FEED);
 }
 
 void setupRazor() {
@@ -268,25 +280,25 @@ void draw() {
   background(0);
   lights();
 
-  // Sync with Razor 
-  if (!synched) {
-    textAlign(CENTER);
-    fill(255);
-    text("Connecting to Razor...", width/2, height/2, -200);
-    
-    if (frameCount == 2)
-      setupRazor();  // Set ouput params and request synch token
-    else if (frameCount > 2)
-      synched = readToken(serial, "#SYNCH00\r\n");  // Look for synch token
-    return;
-  }
-  
-  // Read angles from serial port
-  while (serial.available() >= 12) {
-    yaw = readFloat(serial);
-    pitch = readFloat(serial);
-    roll = readFloat(serial);
-  }
+//  // Sync with Razor 
+//  if (!synched) {
+//    textAlign(CENTER);
+//    fill(255);
+//    text("Connecting to Razor...", width/2, height/2, -200);
+//    
+//    if (frameCount == 2)
+//      setupRazor();  // Set ouput params and request synch token
+//    else if (frameCount > 2)
+//      synched = readToken(serial, "#SYNCH00\r\n");  // Look for synch token
+//    return;
+//  }
+//  
+//  // Read angles from serial port
+//  while (serial.available() >= 12) {
+//    yaw = readFloat(serial);
+//    pitch = readFloat(serial);
+//    roll = readFloat(serial);
+//  }
   
   // Draw info text, which is not influence by the interactivity
   camera(width/2, height/2, 700, width/2, height/2, 0, 0, 1, 0);
@@ -370,10 +382,16 @@ void keyPressed() {
       yawOffset = yaw; 
       break;  
     case 'w':
-      camPos.z -= 100;
+      //camPos.z -= 100;
+      camNearCutPlane += 50;
+        perspective(camFov, float(width)/float(height), 
+            camNearCutPlane, 10000);
       break;
     case 's':
-      camPos.z += 100;
+      //camPos.z += 100;
+      camNearCutPlane -= 50;
+        perspective(camFov, float(width)/float(height), 
+            camNearCutPlane, 10000);
       break;
   }
 }
